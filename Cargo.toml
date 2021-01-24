@@ -1,0 +1,9 @@
+[package]
+authors = ["Damien Pontifex <damien.pontifex@gmail.com>"]
+edition = "2018"
+name = "used"
+version = "0.1.0"
+
+[dependencies]
+func_proc_macros = { path = "func_proc_macros" }
+actix-web = "*"

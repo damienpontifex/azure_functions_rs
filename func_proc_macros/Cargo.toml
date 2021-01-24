@@ -1,0 +1,16 @@
+[package]
+authors = ["Damien Pontifex <damien.pontifex@gmail.com>"]
+edition = "2018"
+name = "func_proc_macros"
+version = "0.1.0"
+[dependencies]
+darling = "*"
+proc-macro2 = "1"
+quote = "*"
+
+[dependencies.syn]
+features = ["full"]
+version = "1"
+
+[lib]
+proc-macro = true
