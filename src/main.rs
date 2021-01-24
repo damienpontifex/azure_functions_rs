@@ -1,24 +1,23 @@
-use actix_web::{web, App, HttpRequest, HttpServer, Responder};
-use func_types::Logger;
+use actix_web::main as func_main;
+mod my_timer_trigger;
+use my_timer_trigger::my_timer_trigger;
 
-#[func_proc_macros::timer(name = "MyTimer", schedule = "*/5 * * * * *")]
-fn my_timer_trigger(logger: &mut func_types::Logger) {
-    logger.info("Hello, world".to_string());
+macro_rules! func_runtime {
+    ( $( $x:expr ),* ) => {
+        actix_web::HttpServer::new(|| {
+            actix_web::App::new()
+                $(
+                .service($x())
+                )*
+        })
+        .bind((std::net::Ipv4Addr::UNSPECIFIED, 8080)).unwrap()
+        .run()
+        .await
+    };
 }
 
-#[actix_web::main]
+#[func_main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
-        App::new()
-            .service(my_timer_trigger())
-            //.route("/", web::get().to(greet))
-            //.route("/{name}", web::get().to(greet))
-    })
-    .bind((std::net::Ipv4Addr::UNSPECIFIED, 8080))?
-    .run()
-    .await
+    func_runtime!(my_timer_trigger, my_timer_trigger)
 }
 
-//fn main() {
-//    my_timer_trigger();
-//}

@@ -15,8 +15,11 @@ struct TimerTriggerInputs {
 pub fn timer(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(item as syn::ItemFn);
     let function_ident = input.sig.ident.clone();
+    let vis = input.vis.clone();
+
+    // Extract the trigger name used to construct the path the web route should handle
     let attr_args = parse_macro_input!(args as syn::AttributeArgs);
-    let TimerTriggerInputs { name, schedule } = match FromMeta::from_list(&attr_args) {
+    let TimerTriggerInputs { name, .. } = match FromMeta::from_list(&attr_args) {
         Ok(v) => v,
         Err(e) => {
             return e.write_errors().into();
@@ -27,18 +30,18 @@ pub fn timer(args: TokenStream, item: TokenStream) -> TokenStream {
     //    println!("{:?}", a);
     //}
     //
-    //println!("Target {}, {}", name, schedule);
 
     let user_fn_ident = quote::format_ident!("user_{}", function_ident);
     let service_fn = quote::format_ident!("{}_service", function_ident);
     let service_path = format!("/{}", name);
-    //let actix_route = quote::format_ident!(#[post("/#name")]);
 
+    // Rename the user function such that our handler can call it and we can use the old name as
+    // the web handler
     input.sig.ident = syn::Ident::new(&user_fn_ident.to_string(), proc_macro2::Span::call_site());
-    //input.block.stmts.insert(0, syn::parse_quote!(println!("Entered function {}", #function_name);));
+    input.vis = syn::Visibility::Inherited;
 
     let outer_function = quote! {
-        async fn #service_fn((req, bytes): (HttpRequest, web::Bytes)) -> impl Responder {
+        async fn #service_fn((req, bytes): (actix_web::HttpRequest, actix_web::web::Bytes)) -> impl actix_web::Responder {
             println!("Before user call");
             println!("Got body {}", String::from_utf8(bytes.to_vec()).unwrap());
             let mut logger = func_types::Logger::default();
@@ -47,10 +50,10 @@ pub fn timer(args: TokenStream, item: TokenStream) -> TokenStream {
             format!("Done")
         }
 
-        fn #function_ident() -> actix_web::Resource {
-            println!("Registering {}", #service_path);
-            web::resource(#service_path).route(web::post().to(#service_fn))
+        #vis fn #function_ident() -> actix_web::Resource {
+            actix_web::web::resource(#service_path).route(actix_web::web::post().to(#service_fn))
         }
+        //let #function_ident = (web::resource(#service_path).route(web::post().to(#service_fn)));
     };
 
     let output = quote!{ 
