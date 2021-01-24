@@ -11,6 +11,7 @@ quote = "*"
 [dependencies.syn]
 features = ["full"]
 version = "1"
+func_types = { path = "../func_types" }
 
 [lib]
 proc-macro = true

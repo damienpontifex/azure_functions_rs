@@ -1,7 +1,8 @@
+use func_types::Logger;
 
 #[func_proc_macros::timer(name = "MyTimer", schedule = "*/5 * * * * *")]
-fn my_timer_trigger() {
-    println!("Hello, world");
+fn my_timer_trigger(logger: &mut Logger) {
+    logger.info("Hello, world".to_string());
 }
 
 fn main() {

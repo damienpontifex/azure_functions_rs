@@ -3,11 +3,6 @@ use proc_macro::TokenStream;
 use syn::parse_macro_input;
 use darling::FromMeta;
 
-#[derive(Default)]
-pub struct Logger {
-    messages: Vec<String>,
-}
-
 #[derive(Debug, FromMeta)]
 struct TimerTriggerInputs {
     #[darling(default)]
@@ -39,7 +34,8 @@ pub fn timer(args: TokenStream, item: TokenStream) -> TokenStream {
     let outer_function = quote! {
         fn #function_ident() {
             println!("Before user call");
-            #user_fn_ident();
+            let mut logger = func_types::Logger::default();
+            #user_fn_ident(&mut logger);
             println!("After user call");
         }
     };

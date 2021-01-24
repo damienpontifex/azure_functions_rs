@@ -619,6 +619,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "func_types"
+version = "0.1.0"
+
+[[package]]
 name = "futures"
 version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1715,6 +1719,7 @@ version = "0.1.0"
 dependencies = [
  "actix-web",
  "func_proc_macros",
+ "func_types",
 ]
 
 [[package]]
