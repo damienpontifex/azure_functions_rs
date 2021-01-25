@@ -7,4 +7,5 @@ version = "0.1.0"
 [dependencies]
 func_proc_macros = { path = "func_proc_macros" }
 func_types = { path = "func_types" }
+func_runtime = { path = "func_runtime" }
 actix-web = "*"

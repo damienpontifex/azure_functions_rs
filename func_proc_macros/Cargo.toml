@@ -3,15 +3,14 @@ authors = ["Damien Pontifex <damien.pontifex@gmail.com>"]
 edition = "2018"
 name = "func_proc_macros"
 version = "0.1.0"
+
 [dependencies]
 darling = "*"
 proc-macro2 = "1"
 quote = "*"
-
-[dependencies.syn]
-features = ["full"]
-version = "1"
+syn = { version = "1", features = ["full"] }
 func_types = { path = "../func_types" }
+actix-web = { version = "*" }
 
 [lib]
 proc-macro = true

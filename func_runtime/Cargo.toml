@@ -1,0 +1,10 @@
+[package]
+name = "func_runtime"
+version = "0.1.0"
+authors = ["Damien Pontifex <damien.pontifex@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+actix-web = "*"
+mime = "0.3"
+

@@ -1,3 +1,6 @@
+mod timer_info;
+pub use timer_info::TimerInfo;
+
 #[derive(Default)]
 pub struct Logger {
     messages: Vec<String>,
