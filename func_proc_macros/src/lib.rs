@@ -13,16 +13,72 @@ struct TimerTriggerInputs {
     schedule: String,
 }
 
+#[derive(Debug, FromMeta)]
+struct EventGridTriggerInputs {
+    #[darling(default)]
+    name: String,
+}
+
+#[derive(Debug, FromMeta)]
+struct QueueTriggerInputs {
+    #[darling(default)]
+    name: String,
+    #[darling(default)]
+    queue_name: String,
+    #[darling(default)]
+    connection: String,
+}
+
+#[derive(Debug, FromMeta)]
+struct EventHubTriggerInputs {
+    #[darling(default)]
+    name: String,
+    #[darling(default)]
+    event_hub_name: String,
+    #[darling(default)]
+    connection: String,
+}
+
+#[derive(Debug, FromMeta)]
+struct BlobStorageTriggerInputs {
+    #[darling(default)]
+    name: String,
+    #[darling(default)]
+    path: String,
+    #[darling(default)]
+    connection: String,
+}
+
 fn last_segment_in_path(path: &syn::Path) -> &syn::PathSegment {
     path.segments.last().expect("Expected at least one segment in path")
 }
 
-fn to_inputs(path_segment: &syn::PathSegment) -> (Option<proc_macro2::TokenStream>, Option<proc_macro2::TokenStream>) {
+fn to_inputs(path_segment: &syn::PathSegment, _mutable: bool, _as_ref: bool) -> (Option<proc_macro2::TokenStream>, Option<proc_macro2::TokenStream>) {
     match path_segment.ident.to_string().as_str() {
         "TimerInfo" => (None, Some(quote!{ body.into_inner() })),
         "Logger" => (Some(quote! { let mut logger = func_types::Logger::default(); }), Some(quote! { &mut logger })),
-        _ => (None, None),
+        // TODO: handle panic better with ident name and span location
+        _ => panic!("Unsupported argument of type {}", path_segment.ident.to_string()),
     }
+}
+
+fn has_parameter_of_type(func: &syn::ItemFn, type_name: &str) -> bool {
+    func.sig.inputs.iter().any(|arg| {
+        if let syn::FnArg::Typed(arg) = arg {
+            match &*arg.ty {
+                Type::Reference(tr) => {
+                    if let Type::Path(tp) = &*tr.elem {
+                        return last_segment_in_path(&tp.path).ident == type_name;
+                    }
+                }
+                Type::Path(tp) => {
+                    return last_segment_in_path(&tp.path).ident == type_name;
+                }
+                _ => {}
+            }
+        }
+        false
+    })
 }
 
 #[proc_macro_attribute]
@@ -30,6 +86,10 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(item as syn::ItemFn);
     let function_ident = input.sig.ident.clone();
     let vis = input.vis.clone();
+
+    if let syn::ReturnType::Type(.., ret_type) = &input.sig.output {
+        println!("Return type {:?}", ret_type);
+    }
 
     // Extract the trigger name used to construct the path the web route should handle
     let attr_args = parse_macro_input!(args as syn::AttributeArgs);
@@ -40,6 +100,11 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
+    // Probably more useful where the trigger has a body such as Queue trigger
+    // if !has_parameter_of_type(&input, "TimerInfo") {
+    //     return syn::Error::new(proc_macro2::Span::call_site(), "Timer triggered function must have a TimerInfo argument").to_compile_error().into();
+    // }
+
     let mut definitions = Vec::new();
     let mut arguments = Vec::new();
 
@@ -49,7 +114,7 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
                 match ty.as_ref() {
                     Type::Path(syn::TypePath { path, .. }) => {
                         let arg_type_name = last_segment_in_path(&path);
-                        let (def, arg) = to_inputs(arg_type_name);
+                        let (def, arg) = to_inputs(arg_type_name, false, false);
                         if let Some(def) = def {
                             definitions.push(def);
                         }
@@ -60,7 +125,7 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
                     Type::Reference(syn::TypeReference { mutability, elem, .. }) => {
                         if let Type::Path(syn::TypePath { path, .. }) = elem.as_ref() {
                             let arg_type_name = last_segment_in_path(path);
-                            let (def, arg) = to_inputs(arg_type_name);
+                            let (def, arg) = to_inputs(arg_type_name, mutability.is_some(), true);
                             if let Some(def) = def {
                                 definitions.push(def);
                             }
@@ -86,12 +151,13 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
 
     let outer_function = quote! {
         #[actix_web::post(#service_path)]
-        #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<func_types::TimerInfo>)) -> impl actix_web::Responder {
-            println!("Before user call");
+        #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<func_types::TimerInfo>)) -> actix_web::Result<actix_web::HttpResponse> {
             #(#definitions;)*
             #user_fn_ident(#(#arguments,)*);
-            println!("After user call");
-            format!("Done")
+            let ret_body = func_types::FuncResponse::default();
+            Ok(actix_web::HttpResponse::Ok()
+                .content_type("application/json")
+                .json(ret_body))
         }
     };
 
@@ -100,4 +166,25 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
         #input
     };
     output.into()
+}
+
+
+#[proc_macro_attribute]
+pub fn event_grid_trigger(_args: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+#[proc_macro_attribute]
+pub fn blob_storage_trigger(_args: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+#[proc_macro_attribute]
+pub fn notification_hub_trigger(_args: TokenStream, item: TokenStream) -> TokenStream {
+    item
+}
+
+#[proc_macro_attribute]
+pub fn queue_trigger(_args: TokenStream, item: TokenStream) -> TokenStream {
+    item
 }
