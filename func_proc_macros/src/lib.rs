@@ -1,7 +1,9 @@
-use quote::quote;
-use proc_macro::TokenStream;
-use syn::parse_macro_input;
+#![feature(box_patterns)]
 use darling::FromMeta;
+use proc_macro::TokenStream;
+use quote::quote;
+use syn::parse_macro_input;
+use syn::{FnArg::Typed, PatType, Type};
 
 #[derive(Debug, FromMeta)]
 struct TimerTriggerInputs {
@@ -9,6 +11,10 @@ struct TimerTriggerInputs {
     name: String,
     #[darling(default)]
     schedule: String,
+}
+
+fn last_segment_in_path(path: &syn::Path) -> &syn::PathSegment {
+    path.segments.last().expect("Expected at least one segment in path")
 }
 
 #[proc_macro_attribute]
@@ -26,10 +32,27 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    //for a in &input.sig.inputs {
-    //    println!("{:?}", a);
-    //}
-    //
+    for a in &input.sig.inputs {
+        match a {
+            Typed(PatType { ty, .. }) => {
+                match ty.as_ref() {
+                    Type::Path(syn::TypePath { path, .. }) => {
+                        let arg_type_name = last_segment_in_path(&path);
+                        println!("Got pat {:#?}", arg_type_name.ident);
+                        println!("Got pat {:#?}", arg_type_name.ident == "TimerInfo");
+                    },
+                    Type::Reference(syn::TypeReference { mutability, elem, .. }) => {
+                        if let Type::Path(syn::TypePath { path, .. }) = elem.as_ref() {
+                            let arg_type_name = last_segment_in_path(path);
+                            println!("Reference {:#?}, {:#?}", mutability, arg_type_name.ident);
+                        }
+                    },
+                    _ => {},
+                }
+            }
+            _ => {} //println!("Unknown input {:#?}", a),
+        }
+    }
 
     let user_fn_ident = quote::format_ident!("user_{}", function_ident);
     let service_path = format!("/{}", name);
@@ -48,16 +71,11 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
             println!("After user call");
             format!("Done")
         }
-
-        //#vis fn #function_ident() -> actix_web::Resource {
-        //    actix_web::web::resource(#service_path).route(actix_web::web::post().to(#service_fn))
-        //}
-        //let #function_ident = (web::resource(#service_path).route(web::post().to(#service_fn)));
     };
 
-    let output = quote!{ 
+    let output = quote! {
         #outer_function
-        #input 
+        #input
     };
     output.into()
 }
