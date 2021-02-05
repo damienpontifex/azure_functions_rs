@@ -1,4 +1,4 @@
-use func_proc_macros::timer_trigger;
+use azure_functions_attributes::timer_trigger;
 use func_types::Logger;
 
 #[timer_trigger(name = "MyTimer", schedule = "*/5 * * * * *")]

@@ -327,6 +327,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_functions_attributes"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "darling",
+ "func_types",
+ "proc-macro2",
+ "quote",
+ "serde_json",
+ "syn",
+]
+
+[[package]]
 name = "backtrace"
 version = "0.3.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -621,18 +634,6 @@ name = "fuchsia-zircon-sys"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3dcaa9ae7725d12cdb85b3ad99a434db70b468c09ded17e012d86b5c1010f7a7"
-
-[[package]]
-name = "func_proc_macros"
-version = "0.1.0"
-dependencies = [
- "actix-web",
- "darling",
- "func_types",
- "proc-macro2",
- "quote",
- "syn",
-]
 
 [[package]]
 name = "func_runtime"
@@ -1788,9 +1789,10 @@ name = "used"
 version = "0.1.0"
 dependencies = [
  "actix-web",
- "func_proc_macros",
+ "azure_functions_attributes",
  "func_runtime",
  "func_types",
+ "serde",
 ]
 
 [[package]]

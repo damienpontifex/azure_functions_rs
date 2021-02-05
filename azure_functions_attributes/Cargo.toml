@@ -1,7 +1,7 @@
 [package]
 authors = ["Damien Pontifex <damien.pontifex@gmail.com>"]
 edition = "2018"
-name = "func_proc_macros"
+name = "azure_functions_attributes"
 version = "0.1.0"
 
 [dependencies]
@@ -11,6 +11,7 @@ quote = "*"
 syn = { version = "1", features = ["full"] }
 func_types = { path = "../func_types" }
 actix-web = { version = "*" }
+serde_json = "*"
 
 [lib]
 proc-macro = true

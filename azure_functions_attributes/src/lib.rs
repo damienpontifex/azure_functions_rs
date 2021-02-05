@@ -4,50 +4,8 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse_macro_input;
 use syn::{FnArg::Typed, PatType, Type};
-
-#[derive(Debug, FromMeta)]
-struct TimerTriggerInputs {
-    #[darling(default)]
-    name: String,
-    #[darling(default)]
-    schedule: String,
-}
-
-#[derive(Debug, FromMeta)]
-struct EventGridTriggerInputs {
-    #[darling(default)]
-    name: String,
-}
-
-#[derive(Debug, FromMeta)]
-struct QueueTriggerInputs {
-    #[darling(default)]
-    name: String,
-    #[darling(default)]
-    queue_name: String,
-    #[darling(default)]
-    connection: String,
-}
-
-#[derive(Debug, FromMeta)]
-struct EventHubTriggerInputs {
-    #[darling(default)]
-    name: String,
-    #[darling(default)]
-    event_hub_name: String,
-    #[darling(default)]
-    connection: String,
-}
-
-#[derive(Debug, FromMeta)]
-struct BlobStorageTriggerInputs {
-    #[darling(default)]
-    name: String,
-    #[darling(default)]
-    path: String,
-    #[darling(default)]
-    connection: String,
-}
+mod inputs;
+use inputs::{TimerTriggerInputs, QueueTriggerInputs};
 
 fn last_segment_in_path(path: &syn::Path) -> &syn::PathSegment {
     path.segments.last().expect("Expected at least one segment in path")
@@ -55,7 +13,7 @@ fn last_segment_in_path(path: &syn::Path) -> &syn::PathSegment {
 
 fn to_inputs(path_segment: &syn::PathSegment, _mutable: bool, _as_ref: bool) -> (Option<proc_macro2::TokenStream>, Option<proc_macro2::TokenStream>) {
     match path_segment.ident.to_string().as_str() {
-        "TimerInfo" => (None, Some(quote!{ body.into_inner() })),
+        "TimerInfo" | "QueueTrigger" => (None, Some(quote!{ body.into_inner() })),
         "Logger" => (Some(quote! { let mut logger = func_types::Logger::default(); }), Some(quote! { &mut logger })),
         // TODO: handle panic better with ident name and span location
         _ => panic!("Unsupported argument of type {}", path_segment.ident.to_string()),
@@ -93,12 +51,27 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
 
     // Extract the trigger name used to construct the path the web route should handle
     let attr_args = parse_macro_input!(args as syn::AttributeArgs);
-    let TimerTriggerInputs { name, .. } = match FromMeta::from_list(&attr_args) {
+    let TimerTriggerInputs { name, schedule, } = match FromMeta::from_list(&attr_args) {
         Ok(v) => v,
         Err(e) => {
             return e.write_errors().into();
         }
     };
+
+    if !std::path::Path::new(&name).exists() {
+        std::fs::create_dir(&name).unwrap();
+        std::fs::write(format!("{}/function.json", name), serde_json::to_string_pretty(&serde_json::json!({
+            "bindings": [
+            {
+                "name": "timer",
+                "type": "timerTrigger",
+                "direction": "in",
+                "schedule": schedule
+            }
+            ]
+        })).unwrap()).unwrap();
+
+    }
 
     // Probably more useful where the trigger has a body such as Queue trigger
     // if !has_parameter_of_type(&input, "TimerInfo") {
@@ -185,6 +158,46 @@ pub fn notification_hub_trigger(_args: TokenStream, item: TokenStream) -> TokenS
 }
 
 #[proc_macro_attribute]
-pub fn queue_trigger(_args: TokenStream, item: TokenStream) -> TokenStream {
-    item
+pub fn queue_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
+    let mut input = parse_macro_input!(item as syn::ItemFn);
+
+    if !has_parameter_of_type(&input, "QueueTrigger") {
+        return syn::Error::new(proc_macro2::Span::call_site(), "Queue triggered function must have a QueueTrigger argument").to_compile_error().into();
+    }
+
+    let function_ident = input.sig.ident.clone();
+    let vis = input.vis.clone();
+
+    let user_fn_ident = quote::format_ident!("user_{}", function_ident);
+
+    // Rename the user function such that our handler can call it and we can use the old name as
+    // the web handler
+    input.sig.ident = syn::Ident::new(&user_fn_ident.to_string(), proc_macro2::Span::call_site());
+    input.vis = syn::Visibility::Inherited;
+
+    // Extract the trigger name used to construct the path the web route should handle
+    let attr_args = parse_macro_input!(args as syn::AttributeArgs);
+    let QueueTriggerInputs { name, .. } = match FromMeta::from_list(&attr_args) {
+        Ok(v) => v,
+        Err(e) => {
+            return e.write_errors().into();
+        }
+    };
+    let service_path = format!("/{}", name);
+
+    let outer_function = quote! {
+        #[actix_web::post(#service_path)]
+        #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<func_types::TimerInfo>)) -> actix_web::Result<actix_web::HttpResponse> {
+            let ret_body = func_types::FuncResponse::default();
+            Ok(actix_web::HttpResponse::Ok()
+                .content_type("application/json")
+                .json(ret_body))
+        }
+    };
+
+    let output = quote! {
+        #outer_function
+        #input
+    };
+    output.into()
 }
