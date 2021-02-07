@@ -3,7 +3,7 @@ Playing around with Rust procedural macros and actix web to build some helpers o
 _Initial development and just trialling out, but happy for contributions or feedback_
 
 ```rust
-use azure_functions_runtime::{func_main, func_runtime};
+use azure_functions_runtime::func_runtime;
 use azure_functions_attributes::{timer_trigger, queue_trigger};
 use azure_functions_types::{TimerInfo, QueueTrigger, Logger};
 use serde::Deserialize;
@@ -24,8 +24,7 @@ pub(crate) fn my_queue_trigger(_queue_item: QueueTrigger<QueueMessage>, logger: 
     logger.info("Hello, world".to_string());
 }
 
-#[func_main]
-async fn main() -> std::io::Result<()> {
+fn main() {
     func_runtime!(timer_trigger_fn, my_queue_trigger)
 }
 ```
