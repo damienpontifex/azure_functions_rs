@@ -1,5 +1,7 @@
 Playing around with Rust procedural macros and actix web to build some helpers on Azure Functions customer handler
 
+_Initial development and just trialling out, but happy for contributions or feedback_
+
 ```rust
 use azure_functions_runtime::{func_main, func_runtime};
 use azure_functions_attributes::{timer_trigger, queue_trigger};
