@@ -14,7 +14,7 @@ fn last_segment_in_path(path: &syn::Path) -> &syn::PathSegment {
 fn to_inputs(path_segment: &syn::PathSegment, _mutable: bool, _as_ref: bool) -> (Option<proc_macro2::TokenStream>, Option<proc_macro2::TokenStream>) {
     match path_segment.ident.to_string().as_str() {
         "TimerInfo" | "QueueTrigger" => (None, Some(quote!{ body.into_inner() })),
-        "Logger" => (Some(quote! { let mut logger = func_types::Logger::default(); }), Some(quote! { &mut logger })),
+        "Logger" => (Some(quote! { let mut logger = azure_functions_types::Logger::default(); }), Some(quote! { &mut logger })),
         // TODO: handle panic better with ident name and span location
         _ => panic!("Unsupported argument of type {}", path_segment.ident.to_string()),
     }
@@ -124,10 +124,10 @@ pub fn timer_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
 
     let outer_function = quote! {
         #[actix_web::post(#service_path)]
-        #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<func_types::TimerInfo>)) -> actix_web::Result<actix_web::HttpResponse> {
+        #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<azure_functions_types::TimerInfo>)) -> actix_web::Result<actix_web::HttpResponse> {
             #(#definitions;)*
             #user_fn_ident(#(#arguments,)*);
-            let ret_body = func_types::FuncResponse::default();
+            let ret_body = azure_functions_types::FuncResponse::default();
             Ok(actix_web::HttpResponse::Ok()
                 .content_type("application/json")
                 .json(ret_body))
@@ -187,8 +187,8 @@ pub fn queue_trigger(args: TokenStream, item: TokenStream) -> TokenStream {
 
     let outer_function = quote! {
         #[actix_web::post(#service_path)]
-        #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<func_types::TimerInfo>)) -> actix_web::Result<actix_web::HttpResponse> {
-            let ret_body = func_types::FuncResponse::default();
+        #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<azure_functions_types::TimerInfo>)) -> actix_web::Result<actix_web::HttpResponse> {
+            let ret_body = azure_functions_types::FuncResponse::default();
             Ok(actix_web::HttpResponse::Ok()
                 .content_type("application/json")
                 .json(ret_body))

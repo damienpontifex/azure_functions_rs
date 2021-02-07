@@ -1,6 +1,6 @@
 mod my_timer_trigger;
 mod my_queue_trigger;
-use func_runtime::{func_main, func_runtime};
+use azure_functions_runtime::{func_main, func_runtime};
 use my_timer_trigger::my_timer_trigger as timer_trigger_fn;
 
 //#[actix_web::get("/")]

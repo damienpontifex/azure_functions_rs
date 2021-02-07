@@ -1,5 +1,5 @@
 use azure_functions_attributes::queue_trigger;
-use func_types::Logger;
+use azure_functions_types::{QueueTrigger, Logger};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -9,6 +9,6 @@ pub struct QueueMessage {
 }
 
 #[queue_trigger(name = "MyQueueTrigger")]
-pub(crate) fn run(_timer: func_types::QueueTrigger<QueueMessage>, logger: &mut Logger) {
+pub(crate) fn run(_timer: QueueTrigger<QueueMessage>, logger: &mut Logger) {
     logger.info("Hello, world".to_string());
 }
