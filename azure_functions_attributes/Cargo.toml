@@ -9,7 +9,7 @@ darling = "0.12"
 proc-macro2 = "1"
 quote = "1"
 syn = { version = "1", features = ["full"] }
-azure_functions_types = { path = "../azure_functions_types " }
+azure_functions_types = { version = "0.1.0", path = "../azure_functions_types" }
 actix-web = { version = "3" }
 serde_json = "1"
 

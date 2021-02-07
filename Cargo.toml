@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "azure_functions_attributes",
     "azure_functions_runtime",
     "azure_functions_types",
+    "azure_functions_attributes",
 ]
