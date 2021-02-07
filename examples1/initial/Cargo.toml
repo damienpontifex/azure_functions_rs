@@ -1,0 +1,12 @@
+[package]
+authors = ["Damien Pontifex <damien.pontifex@gmail.com>"]
+edition = "2018"
+name = "used"
+version = "0.1.0"
+
+[dependencies]
+azure_functions_attributes = { path = "../../azure_functions_attributes" }
+azure_functions_types = { path = "../../azure_functions_types" }
+azure_functions_runtime = { path = "../../azure_functions_runtime" }
+actix-web = "*"
+serde = "*"

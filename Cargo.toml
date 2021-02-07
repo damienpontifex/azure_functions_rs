@@ -1,12 +1,6 @@
-[package]
-authors = ["Damien Pontifex <damien.pontifex@gmail.com>"]
-edition = "2018"
-name = "used"
-version = "0.1.0"
-
-[dependencies]
-azure_functions_attributes = { path = "azure_functions_attributes" }
-func_types = { path = "func_types" }
-func_runtime = { path = "func_runtime" }
-actix-web = "*"
-serde = "*"
+[workspace]
+members = [
+    "azure_functions_attributes",
+    "azure_functions_runtime",
+    "azure_functions_types",
+]
