@@ -18,23 +18,29 @@ fn to_inputs(path_segment: &syn::PathSegment, _mutable: bool, _as_ref: bool) -> 
     }
 }
 
-fn has_parameter_of_type(func: &syn::ItemFn, type_name: &str) -> bool {
-    func.sig.inputs.iter().any(|arg| {
+fn get_trigger_type(func: &syn::ItemFn, type_name: &str) -> Option<syn::TypePath> {
+    func.sig.inputs.iter().map(|arg| {
         if let syn::FnArg::Typed(arg) = arg {
             match &*arg.ty {
                 Type::Reference(tr) => {
                     if let Type::Path(tp) = &*tr.elem {
-                        return last_segment_in_path(&tp.path).ident == type_name;
+                        let ident = &last_segment_in_path(&tp.path).ident;
+                        if ident == type_name {
+                            return Some(tp.clone());
+                        }
                     }
                 }
                 Type::Path(tp) => {
-                    return last_segment_in_path(&tp.path).ident == type_name;
+                    let ident = &last_segment_in_path(&tp.path).ident;
+                    if ident == type_name {
+                        return Some(tp.clone());
+                    }
                 }
                 _ => {}
             }
         }
-        false
-    })
+        None
+    }).filter(|x| x.is_some()).next().flatten()
 }
 
 pub(crate) fn impl_trigger<A>(args: TokenStream, item: TokenStream, trigger_type: &str) -> TokenStream where A: Binding + FromMeta {
@@ -42,14 +48,22 @@ pub(crate) fn impl_trigger<A>(args: TokenStream, item: TokenStream, trigger_type
     let function_ident = input.sig.ident.clone();
     let vis = input.vis.clone();
 
-    if !has_parameter_of_type(&input, trigger_type) {
+    let trigger_type_ident = get_trigger_type(&input, trigger_type);
+    if trigger_type_ident.is_none() {
         return syn::Error::new(proc_macro2::Span::call_site(), format!("Must have a {} argument", trigger_type)).to_compile_error().into();
     }
+    let trigger_type_ident = trigger_type_ident.unwrap();
 
+    let mut returns_result_type = false;
     // TODO: handle $return type out bindings
-    // if let syn::ReturnType::Type(.., ret_type) = &input.sig.output {
-    //     println!("Return type {:?}", ret_type);
-    // }
+    // syn::Path { .., segments }
+    if let syn::ReturnType::Type(.., ret_type) = &input.sig.output {
+        if let syn::Type::Path(syn::TypePath { path, .. }) = ret_type.as_ref() {
+            if last_segment_in_path(&path).ident == "Result" {
+                returns_result_type = true;
+            }
+        }
+    }
 
     // Extract the trigger name used to construct the path the web route should handle
     let attr_args = parse_macro_input!(args as syn::AttributeArgs);
@@ -116,15 +130,41 @@ pub(crate) fn impl_trigger<A>(args: TokenStream, item: TokenStream, trigger_type
     input.sig.ident = syn::Ident::new(&user_fn_ident.to_string(), proc_macro2::Span::call_site());
     input.vis = syn::Visibility::Inherited;
 
-    let trigger_type_ident = quote::format_ident!("{}", trigger_type);
+    // let trigger_type_ident = quote::format_ident!("{}", trigger_type);
+
+    let mut user_fn_invocation = quote! {
+        #user_fn_ident(#(#arguments,)*);
+    };
+    if returns_result_type {
+        user_fn_invocation = quote! {
+            let result = #user_fn_invocation
+        };
+    }
+
+    let response = if returns_result_type {
+        quote! {
+            match result {
+                Ok(_) => {
+                    actix_web::HttpResponse::Ok()
+                },
+                Err(_) => {
+                    actix_web::HttpResponse::InternalServerError()
+                },
+            }
+        }
+    } else {
+        quote! {
+            actix_web::HttpResponse::Ok()
+        }
+    };
 
     let outer_function = quote! {
         #[actix_web::post(#service_path)]
         #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<azure_functions_types::#trigger_type_ident>)) -> actix_web::Result<actix_web::HttpResponse> {
             #(#definitions;)*
-            #user_fn_ident(#(#arguments,)*);
+            #user_fn_invocation
             let ret_body = azure_functions_types::FuncResponse::default();
-            Ok(actix_web::HttpResponse::Ok()
+            Ok(#response
                 .content_type("application/json")
                 .json(ret_body))
         }

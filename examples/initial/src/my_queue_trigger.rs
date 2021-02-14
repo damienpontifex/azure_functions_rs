@@ -9,7 +9,8 @@ pub struct QueueMessage {
 }
 
 #[queue_trigger(name = "MyQueueTrigger", queue_name = "myqueue", connection = "AzureStorageConnectionString")]
-pub(crate) fn run(message: QueueTrigger<QueueMessage>, logger: &mut Logger) {
+pub(crate) fn run(message: QueueTrigger<QueueMessage>, logger: &mut Logger) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
     logger.info(format!("Received queue message: {:#?}", message.data.my_queue_item));
+    Ok(())
 }
 
