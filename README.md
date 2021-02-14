@@ -2,6 +2,10 @@ Playing around with Rust procedural macros and actix web to build some helpers o
 
 _Initial development and just trialling out, but happy for contributions or feedback_
 
+```bash
+cargo build && cp target/debug/handler . && func start
+```
+
 ```rust
 use azure_functions_runtime::func_runtime;
 use azure_functions_attributes::{timer_trigger, queue_trigger};
