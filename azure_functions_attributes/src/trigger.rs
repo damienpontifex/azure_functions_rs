@@ -177,7 +177,7 @@ pub(crate) fn impl_trigger<A>(args: TokenStream, item: TokenStream, trigger_type
         #vis async fn #function_ident((req, body): (actix_web::HttpRequest, actix_web::web::Json<azure_functions_types::#trigger_type_ident>)) -> actix_web::Result<actix_web::HttpResponse> {
             #(#definitions;)*
             #user_fn_invocation
-            let mut ret_body = azure_functions_types::FuncResponse::default();
+            let mut ret_body = azure_functions_types::FuncResponse::new();
             #log_assignment
             Ok(#response
                 .content_type("application/json")

@@ -22,7 +22,7 @@ impl Binding for TimerTriggerInputs {
         serde_json::json!({
             "type": "timerTrigger",
             "direction": "in",
-            "name": "myTimer",
+            "name": "timer",
             "schedule": self.schedule,
         })
     }

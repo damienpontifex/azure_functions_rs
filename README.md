@@ -25,6 +25,37 @@ pub(crate) fn my_queue_trigger(queue_item: QueueTrigger<QueueMessage>, logger: &
 }
 
 fn main() {
-    func_runtime!(timer_trigger_fn, my_queue_trigger)
+    func_runtime!(timer_trigger_fn, my_queue_trigger);
 }
+```
+
+host.json
+```json
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    }
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[1.*, 2.0.0)"
+  },
+  "customHandler": {
+    "description": {
+      "defaultExecutablePath": "handler",
+      "workingDirectory": "",
+      "arguments": []
+    }
+  }
+}
+```
+
+.funcignore
+```
+target
 ```

@@ -22,7 +22,16 @@ impl Logger {
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct FuncResponse {
-    // pub outputs: serde_json::Value,
+    pub outputs: serde_json::Value,
     pub logs: Vec<String>,
-    // pub return_value: String,
+    pub return_value: String,
+}
+
+impl FuncResponse {
+    pub fn new() -> Self {
+        FuncResponse {
+            outputs: serde_json::json!({ "res": { "body": "" }}),
+            ..Default::default()
+        }
+    }
 }
