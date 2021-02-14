@@ -9,7 +9,7 @@ pub struct QueueMessage {
 }
 
 #[queue_trigger(name = "MyQueueTrigger", queue_name = "myqueue", connection = "AzureStorageConnectionString")]
-pub(crate) fn run(_timer: QueueTrigger<QueueMessage>, logger: &mut Logger) {
-    logger.info("Hello, world".to_string());
+pub(crate) fn run(message: QueueTrigger<QueueMessage>, logger: &mut Logger) {
+    logger.info(format!("Received queue message: {:#?}", message.data.my_queue_item));
 }
 
