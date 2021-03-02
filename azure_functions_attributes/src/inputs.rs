@@ -54,7 +54,7 @@ impl Binding for QueueTriggerInputs {
         serde_json::json!({
             "type": "queueTrigger",
             "direction": "in",
-            "name": "myQueueItem",
+            "name": "queueItem",
             "queueName": self.queue_name,
             "connection": self.connection,
         })

@@ -32,7 +32,7 @@ pub struct QueueTrigger<T> where T: DeserializeOwned {
 #[serde(rename_all = "camelCase")]
 pub struct Data<T> where T: DeserializeOwned {
     #[serde(deserialize_with = "double_serialized")]
-    pub my_queue_item: T,
+    pub queue_item: T,
 }
 
 #[derive(Debug, Deserialize)]
