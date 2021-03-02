@@ -17,15 +17,14 @@ fn my_timer_trigger(timer: TimerInfo, logger: &mut Logger) {
     logger.info(format!("Timer trigger fired at {}", timer.metadata.sys.utc_now));
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct QueueMessage {
-    my_queue_item: String,
+#[derive(Deserialize, Debug)]
+struct QueueItem {
+    message: String,
 }
 
 #[queue_trigger(name = "MyQueueTrigger", queue_name = "myqueue", connection = "AzureStorageConnectionString")]
-fn my_queue_trigger(queue_item: QueueTrigger<QueueMessage>, logger: &mut Logger) {
-    logger.info(format!("Received queue message: {:#?}", queue_item.data.my_queue_item));
+fn my_queue_trigger(queue_item: QueueTrigger<QueueItem>, logger: &mut Logger) {
+    logger.info(format!("Received queue message: {:#?}", queue_item));
 }
 
 fn main() {

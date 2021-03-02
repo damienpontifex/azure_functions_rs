@@ -10,3 +10,4 @@ azure_functions_types = { path = "../../azure_functions_types" }
 azure_functions_runtime = { path = "../../azure_functions_runtime" }
 serde = "*"
 actix-web = "*"
+serde_json = "*"

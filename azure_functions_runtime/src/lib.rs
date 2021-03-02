@@ -22,6 +22,10 @@ macro_rules! func_runtime {
                     $(
                     .service($x)
                     )*
+                    .default_service($crate::actix_web::web::route().to(|req: $crate::actix_web::HttpRequest| {
+                        println!("Received unmatched request {:?}", req);
+                        $crate::actix_web::HttpResponse::NotFound()
+                    }))
             })
             .bind((std::net::Ipv4Addr::UNSPECIFIED, port)).unwrap()
             .run()
