@@ -1,7 +1,7 @@
 #![feature(box_patterns)]
 use proc_macro::TokenStream;
 mod inputs;
-use inputs::{TimerTriggerInputs, QueueTriggerInputs};
+use inputs::{QueueTriggerInputs, TimerTriggerInputs};
 
 mod trigger;
 

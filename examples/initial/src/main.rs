@@ -1,5 +1,5 @@
-mod my_timer_trigger;
 mod my_queue_trigger;
+mod my_timer_trigger;
 use azure_functions_runtime::func_runtime;
 use my_timer_trigger::my_timer_trigger as timer_trigger_fn;
 

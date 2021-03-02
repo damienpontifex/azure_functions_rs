@@ -4,6 +4,8 @@ pub use timer_info::TimerInfo;
 mod queue_trigger;
 pub use queue_trigger::QueueTrigger;
 
+mod serialization;
+
 use serde::Serialize;
 
 //

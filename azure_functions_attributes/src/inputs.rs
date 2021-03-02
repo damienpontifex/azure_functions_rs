@@ -28,7 +28,6 @@ impl Binding for TimerTriggerInputs {
     }
 }
 
-
 #[derive(Debug, FromMeta)]
 pub(crate) struct EventGridTriggerInputs {
     #[darling(default)]
@@ -80,4 +79,3 @@ pub(crate) struct BlobStorageTriggerInputs {
     #[darling(default)]
     connection: String,
 }
-

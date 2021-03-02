@@ -42,6 +42,3 @@ pub struct Sys {
     pub utc_now: DateTime<Utc>,
     pub rand_guid: Uuid,
 }
-
-
-
