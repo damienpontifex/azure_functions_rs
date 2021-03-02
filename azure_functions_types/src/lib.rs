@@ -8,14 +8,15 @@ mod serialization;
 
 use serde::Serialize;
 
-//
+/// Azure function logger
 #[derive(Default)]
 pub struct Logger {
-    //
+    /// Logged messages for each function invocation
     pub messages: Vec<String>,
 }
 
 impl Logger {
+    /// Log message with information level
     pub fn info(&mut self, msg: String) {
         self.messages.push(msg);
     }
