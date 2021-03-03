@@ -11,6 +11,11 @@ fn last_segment_in_path(path: &syn::Path) -> &syn::PathSegment {
         .expect("Expected at least one segment in path")
 }
 
+/// Map function arguments to types constructed and passed into user defined function
+///
+/// # Arguments
+///
+/// `path_segment` - The path segment representing function arguments
 fn to_inputs(
     path_segment: &syn::PathSegment,
     _mutable: bool,
@@ -39,6 +44,14 @@ fn to_inputs(
     }
 }
 
+/// Get the function argument that is the object containing the trigger data
+///
+/// # Arguments
+///
+/// `func` - the function
+/// `type_name` - the type name expected to be in the arguments associated with this function type
+///
+/// Returns the type that should be bound to the incoming request body
 fn get_trigger_type(func: &syn::ItemFn, type_name: &str) -> Option<syn::TypePath> {
     func.sig
         .inputs
@@ -70,6 +83,7 @@ fn get_trigger_type(func: &syn::ItemFn, type_name: &str) -> Option<syn::TypePath
         .flatten()
 }
 
+/// Trigger proc macro implementation that applies across trigger types
 pub(crate) fn impl_trigger<A>(
     args: TokenStream,
     item: TokenStream,
@@ -114,6 +128,7 @@ where
 
     let name = trigger_inputs.function_name();
 
+    // Write out the function.json if it doesn't already exist
     if !std::path::Path::new(&name).exists() {
         std::fs::create_dir(&name).unwrap();
         std::fs::write(
@@ -183,6 +198,7 @@ where
 
     // let trigger_type_ident = quote::format_ident!("{}", trigger_type);
 
+    // Build the caller for the user function that takes in the constructed instances
     let mut user_fn_invocation = quote! {
         #user_fn_ident(#(#arguments,)*);
     };
@@ -192,6 +208,8 @@ where
         };
     }
 
+    // Allow the user function to return a Result type that will indicate either success or failure to the function
+    // Otherwise always return success on function completion
     let response = if returns_result_type {
         quote! {
             match result {
@@ -209,6 +227,7 @@ where
         }
     };
 
+    // If the logger is used, ensure the function return structure contains those logs
     let log_assignment = if has_logger {
         quote! {
             ret_body.logs = logger.messages;
